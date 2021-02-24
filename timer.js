@@ -1,127 +1,88 @@
 class CountdownTimer {
-  constructor(timeObj) {
-    this.selector = timeObj.selector;
-    this.targetDate = timeObj.targetDate;
-    this.initialNumOfDays = Math.floor(
-      (this.targetDate - new Date()) / (1000 * 60 * 60 * 24)
-    );
-    this.timerId;
+  constructor({ selector, targetDate }) {
+    this.selector = document.querySelector(selector);
+
+    this.days = this.selector.querySelector('[data-value="days"]');
+    this.hours = this.selector.querySelector('[data-value="hours"]');
+    this.mins = this.selector.querySelector('[data-value="mins"]');
+    this.secs = this.selector.querySelector('[data-value="secs"]');
+
+    this.targetDate = targetDate.getTime();
+    this.timeCount();
+    this.updateTime();
   }
 
-  getSeconds = (currentDate) => {
-    return Math.floor(((this.targetDate - currentDate) % (1000 * 60)) / 1000);
-  };
-
-  getMinutes = (currentDate) => {
-    return Math.floor(
-      ((this.targetDate - currentDate) % (1000 * 60 * 60)) / (1000 * 60)
-    );
-  };
-
-  getHours = (currentDate) => {
-    return Math.floor(
-      ((this.targetDate - currentDate) % (1000 * 60 * 60 * 24)) /
-        (1000 * 60 * 60)
-    );
-  };
-
-  getDays = (currentDate) => {
-    return Math.floor((this.targetDate - currentDate) / (1000 * 60 * 60 * 24));
-  };
-
-  getNumbers = () => {
-    let date = new Date();
-    let secs = this.getSeconds(date);
-    let mins = this.getMinutes(date);
-    let hours = this.getHours(date);
-    let days = this.getDays(date);
-    return { secs, mins, hours, days };
-  };
-
-  getValues = () => {
-    let numbers = this.getNumbers();
-    let secsPlace = numbers.secs < 10 ? `0${numbers.secs}` : `${numbers.secs}`;
-    let minsPlace = numbers.mins < 10 ? `0${numbers.mins}` : `${numbers.mins}`;
-    let hoursPlace =
-      numbers.hours < 10 ? `0${numbers.hours}` : `${numbers.hours}`;
-    let n1 = this.initialNumOfDays.toString().length;
-    let n2 = numbers.days.toString().length;
-    let daysPlace = `${"0".repeat(n1 - n2)}${numbers.days}`;
-
-    return { secsPlace, minsPlace, hoursPlace, daysPlace };
-  };
-
-  reflectInitialDate = () => {
-    let values = this.getValues();
-    document.querySelector(
-      `${this.selector} span[data-value="secs"]`
-    ).textContent = values.secsPlace;
-    document.querySelector(
-      `${this.selector} span[data-value="mins"]`
-    ).textContent = values.minsPlace;
-    document.querySelector(
-      `${this.selector} span[data-value="hours"]`
-    ).textContent = values.hoursPlace;
-    document.querySelector(
-      `${this.selector} span[data-value="days"]`
-    ).textContent = values.daysPlace;
-  };
-
-  reflectTime = () => {
-    let numbers = this.getNumbers();
-    let values = this.getValues();
-
-    document.querySelector(
-      `${this.selector} span[data-value="secs"]`
-    ).textContent = values.secsPlace;
-
-    if (numbers.secs === 59) {
-      document.querySelector(
-        `${this.selector} span[data-value="mins"]`
-      ).textContent = values.minsPlace;
+  timeCount() {
+    let now = Date.now();
+    // console.log(now);
+    let time = this.targetDate - now;
+    if (now >= this.targetDate) {
+      this.currentTime(0);
+      return;
     }
+    this.currentTime(time);
+  }
 
-    if (numbers.mins === 59) {
-      document.querySelector(
-        `${this.selector} span[data-value="hours"]`
-      ).textContent = values.hoursPlace;
-    }
+  updateTime() {
+    let timer = setInterval(() => {
+      let now = Date.now();
+      // console.log(now);
+      let time = this.targetDate - now;
+      this.currentTime(time);
+      if (now >= this.targetDate) {
+        clearInterval(timer);
+        this.currentTime(0);
+      }
+    }, 1000);
+  }
 
-    if (numbers.hours === 11) {
-      document.querySelector(
-        `${this.selector} span[data-value="days"]`
-      ).textContent = values.daysPlace;
-    }
+  currentTime(time) {
+    /*
+     * Оставшиеся дни: делим значение UTC на 1000 * 60 * 60 * 24, количество
+     * миллисекунд в одном дне (миллисекунды * секунды * минуты * часы)
+     */
+    const days = Math.floor(time / (1000 * 60 * 60 * 24));
+    // console.log(days);
 
-    if (
-      numbers.secs === 0 &&
-      numbers.mins === 0 &&
-      numbers.hours === 0 &&
-      numbers.days === 0
-    ) {
-      clearInterval(this.timerId);
-    }
-  };
+    /*
+     * Оставшиеся часы: получаем остаток от предыдущего расчета с помощью оператора
+     * остатка % и делим его на количество миллисекунд в одном часе
+     * (1000 * 60 * 60 = миллисекунды * минуты * секунды)
+     */
+    const hours = Math.floor((time % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    // console.log(hours);
 
-  startTimer = () => {
-    this.timerId = setInterval(this.reflectTime, 1000);
-  };
+    /*
+     * Оставшиеся минуты: получаем оставшиеся минуты и делим их на количество
+     * миллисекунд в одной минуте (1000 * 60 = миллисекунды * секунды)
+     */
+    const mins = Math.floor((time % (1000 * 60 * 60)) / (1000 * 60));
+    // console.log(mins);
+
+    /*
+     * Оставшиеся секунды: получаем оставшиеся секунды и делим их на количество
+     * миллисекунд в одной секунде (1000)
+     */
+    const secs = Math.floor((time % (1000 * 60)) / 1000);
+    // console.log(secs);
+    this.refs(days, hours, mins, secs);
+  }
+
+  refs(day, hour, min, sec) {
+    this.days.innerText = this.pad(day);
+    this.hours.innerText = this.pad(hour);
+    this.mins.innerText = this.pad(min);
+    this.secs.innerText = this.pad(sec);
+  }
+
+  pad(text) {
+    return String(text).padStart(2, "0");
+  }
 }
 
-//Timer 1 example
-const countdownTimer = new CountdownTimer({
+const timerCounter = new CountdownTimer({
   selector: "#timer-1",
-  targetDate: new Date(new Date().getTime() + 20000),
+  targetDate: new Date("Jul 17, 2030"),
 });
-
-countdownTimer.reflectInitialDate();
-countdownTimer.startTimer();
-
-//Timer 2 example
-const countdownTimer1 = new CountdownTimer({
-  selector: "#timer-1",
-  targetDate: new Date("Oct 17, 2019"),
-});
-
-//countdownTimer1.reflectInitialDate();
-//countdownTimer1.startTimer();
+console.log(timerCounter);
+console.log(Date.now());
